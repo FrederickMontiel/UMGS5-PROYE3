@@ -101,10 +101,8 @@ Las fórmulas pueden referenciar otras celdas y se actualizan automáticamente.
 
 ---
 
+
 ## Autoría
 
-**Desarrollado por:*FREDERICK MONTIEL* Trabajo (según comentarios internos del código).
+Desarrollado por:*FREDERICK MONTIEL*
 
----
-
-¿Deseas agregar instrucciones de compilación/ejecución o ejemplos de uso?
