@@ -4,9 +4,9 @@
  */
 package gt.edu.miumg.fmontiel.views;
 
-import javax.swing.JTable;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 
@@ -19,6 +19,12 @@ import gt.edu.miumg.fmontiel.views.mainview.renderers.FormulaCellRenderer;
 import javax.swing.*;
 import javax.swing.table.TableColumn;
 import java.awt.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.util.ArrayList;
 
 /**
  *
@@ -42,6 +48,7 @@ public class MainView extends javax.swing.JFrame {
         ajustarAnchoPrimeraColumna(jtableParaExcel, jtableParaExcel.getRowCount());
 
         jtableParaExcel.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        jtableParaExcel.getTableHeader().setReorderingAllowed(false);
         scrollPaneParaCeldas.setViewportView(jtableParaExcel);
 
         jtableParaExcel.setDefaultRenderer(Object.class, new FormulaCellRenderer());
@@ -138,6 +145,7 @@ public class MainView extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated
     // <editor-fold defaultstate="collapsed" desc="Generated
     // <editor-fold defaultstate="collapsed" desc="Generated
+    // <editor-fold defaultstate="collapsed" desc="Generated
     // Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -152,10 +160,6 @@ public class MainView extends javax.swing.JFrame {
         jMenu1 = new javax.swing.JMenu();
         openFileMenuItem = new javax.swing.JMenuItem();
         guardarDocumentoMenuItem = new javax.swing.JMenuItem();
-        guardarDocumentoComoMenuItem = new javax.swing.JMenuItem();
-        jMenu2 = new javax.swing.JMenu();
-        insertarSumaEnCeldaMenuItem = new javax.swing.JMenuItem();
-        insertarMultiplicacionEnCeldaMenuItem = new javax.swing.JMenuItem();
         jMenu3 = new javax.swing.JMenu();
         informacionProgramaMenuItem = new javax.swing.JMenuItem();
 
@@ -256,25 +260,7 @@ public class MainView extends javax.swing.JFrame {
         });
         jMenu1.add(guardarDocumentoMenuItem);
 
-        guardarDocumentoComoMenuItem.setText("Guardar como");
-        guardarDocumentoComoMenuItem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                guardarDocumentoComoMenuItemActionPerformed(evt);
-            }
-        });
-        jMenu1.add(guardarDocumentoComoMenuItem);
-
         jMenuBar1.add(jMenu1);
-
-        jMenu2.setText("Insertar");
-
-        insertarSumaEnCeldaMenuItem.setText("Suma");
-        jMenu2.add(insertarSumaEnCeldaMenuItem);
-
-        insertarMultiplicacionEnCeldaMenuItem.setText("Multiplicación");
-        jMenu2.add(insertarMultiplicacionEnCeldaMenuItem);
-
-        jMenuBar1.add(jMenu2);
 
         jMenu3.setText("Ayuda");
 
@@ -293,12 +279,178 @@ public class MainView extends javax.swing.JFrame {
     }// GEN-LAST:event_guardarDocumentoComoMenuItemActionPerformed
 
     private void openFileMenuItemActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jMenuItem1ActionPerformed
-        // TODO add your handling code here:
+        try {
+            // Create file chooser
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Abrir archivo CSV");
+
+            // Set default directory to Documents
+            String documentsPath = System.getProperty("user.home") + File.separator + "Documents";
+            fileChooser.setCurrentDirectory(new File(documentsPath));
+
+            // Set file filter for CSV files
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Archivos CSV (*.csv)", "csv");
+            fileChooser.setFileFilter(filter);
+
+            int userSelection = fileChooser.showOpenDialog(this);
+
+            if (userSelection == JFileChooser.APPROVE_OPTION) {
+                File fileToOpen = fileChooser.getSelectedFile();
+
+                // Create a new table model with the same dimensions as the current one
+                CeldaTableModel model = (CeldaTableModel) jtableParaExcel.getModel();
+
+                // Create BufferedReader
+                BufferedReader br = new BufferedReader(new FileReader(fileToOpen));
+
+                String line;
+                int rowIndex = 0;
+
+                // Read file line by line
+                while ((line = br.readLine()) != null && rowIndex < model.getRowCount()) {
+                    // Split the line, handling quoted values
+                    java.util.List<String> values = parseCSVLine(line);
+
+                    // Fill the cells with the values
+                    for (int j = 0; j < values.size() && j < model.getColumnCount() - 1; j++) {
+                        String value = values.get(j);
+                        Celda celda = model.getCeldaAt(rowIndex, j + 1);
+
+                        // Check if the value is a formula (starts with =)
+                        if (value.startsWith("=")) {
+                            celda.setFormula(value);
+                        } else {
+                            celda.setFormula(value);
+                        }
+
+                        // Notify the model that the cell has been updated
+                        model.fireTableCellUpdated(rowIndex, j + 1);
+                    }
+
+                    rowIndex++;
+                }
+
+                // Close the reader
+                br.close();
+
+                // Force table to refresh completely
+                model.fireTableDataChanged();
+
+                JOptionPane.showMessageDialog(this,
+                        "Archivo cargado exitosamente:\n" + fileToOpen.getAbsolutePath(),
+                        "Abrir CSV", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Error al abrir el archivo: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
     }// GEN-LAST:event_jMenuItem1ActionPerformed
 
     private void guardarDocumentoMenuItemActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jMenuItem2ActionPerformed
-        // TODO add your handling code here:
+        try {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Guardar como CSV");
+
+            String documentsPath = System.getProperty("user.home") + File.separator + "Documents";
+            fileChooser.setCurrentDirectory(new File(documentsPath));
+
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Archivos CSV (*.csv)", "csv");
+            fileChooser.setFileFilter(filter);
+            fileChooser.setSelectedFile(new File("hoja_de_calculo.csv"));
+
+            int userSelection = fileChooser.showSaveDialog(this);
+
+            if (userSelection == JFileChooser.APPROVE_OPTION) {
+                File fileToSave = fileChooser.getSelectedFile();
+
+                if (!fileToSave.getName().toLowerCase().endsWith(".csv")) {
+                    fileToSave = new File(fileToSave.getAbsolutePath() + ".csv");
+                }
+
+                FileWriter fw = new FileWriter(fileToSave);
+                BufferedWriter bw = new BufferedWriter(fw);
+
+                CeldaTableModel model = (CeldaTableModel) jtableParaExcel.getModel();
+                int rowCount = model.getRowCount();
+                int colCount = model.getColumnCount();
+
+                for (int i = 0; i < rowCount; i++) {
+                    StringBuilder line = new StringBuilder();
+
+                    for (int j = 0; j < colCount; j++) {
+                        Celda celda = model.getCeldaAt(i, j);
+                        String value = celda != null ? celda.getValor().toString() : "";
+
+                        if (value.contains(",")) {
+                            value = "\"" + value + "\"";
+                        }
+
+                        line.append(value);
+
+                        if (j < colCount - 1) {
+                            line.append(";");
+                        }
+                    }
+
+                    bw.write(line.toString());
+                    bw.newLine();
+                }
+
+                bw.close();
+                fw.close();
+
+                JOptionPane.showMessageDialog(this,
+                        "Archivo guardado exitosamente en:\n" + fileToSave.getAbsolutePath(),
+                        "Guardar CSV", JOptionPane.INFORMATION_MESSAGE);
+
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Error al guardar el archivo: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
     }// GEN-LAST:event_jMenuItem2ActionPerformed
+
+    private java.util.List<String> parseCSVLine(String line) {
+        java.util.List<String> result = new ArrayList<>();
+
+        // Check if the file uses semicolons (;) or commas (,) as separators
+        String separator = line.contains(";") ? ";" : ",";
+
+        // Simple implementation for basic CSV parsing
+        if (!line.contains("\"")) {
+            // No quotes, simple split
+            String[] values = line.split(separator);
+            for (String value : values) {
+                result.add(value.trim());
+            }
+        } else {
+            // With quotes, more complex parsing
+            boolean inQuotes = false;
+            StringBuilder currentValue = new StringBuilder();
+
+            for (int i = 0; i < line.length(); i++) {
+                char c = line.charAt(i);
+
+                if (c == '"') {
+                    inQuotes = !inQuotes;
+                } else if (c == separator.charAt(0) && !inQuotes) {
+                    result.add(currentValue.toString().trim());
+                    currentValue = new StringBuilder();
+                } else {
+                    currentValue.append(c);
+                }
+            }
+
+            // Add the last value
+            result.add(currentValue.toString().trim());
+        }
+
+        return result;
+    }
 
     private void textFieldFormulaCeldaActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jTextField1ActionPerformed
         // TODO add your handling code here:
@@ -344,14 +496,10 @@ public class MainView extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JMenuItem guardarDocumentoComoMenuItem;
     private javax.swing.JMenuItem guardarDocumentoMenuItem;
     private javax.swing.JMenuItem informacionProgramaMenuItem;
-    private javax.swing.JMenuItem insertarMultiplicacionEnCeldaMenuItem;
-    private javax.swing.JMenuItem insertarSumaEnCeldaMenuItem;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JMenu jMenu1;
-    private javax.swing.JMenu jMenu2;
     private javax.swing.JMenu jMenu3;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel jPanel1;
