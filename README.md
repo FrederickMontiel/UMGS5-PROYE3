@@ -2,6 +2,8 @@
 
 MiniExcel es una aplicación de escritorio desarrollada en Java Swing que simula una hoja de cálculo básica, permitiendo la edición de celdas, uso de fórmulas simples y la importación/exportación de archivos CSV.
 
+Se deberá instalar el jdk 21 de java.
+
 ---
 
 ## Estructura Principal
